@@ -166,6 +166,7 @@ public:
 	bool             GetHole(float x, float y) const;
 	bool             IntersectWithHeightMap(Vec3 vStartPoint, Vec3 vStopPoint, float fDist, int nMaxTestsToScip);
 	bool             IsMeshQuadFlipped(const float x, const float y, const float unitSize) const;
+	
 
 #ifdef SUPP_HMAP_OCCL
 	bool Intersect(Vec3 vStartPoint, Vec3 vStopPoint, float fDist, int nMaxTestsToScip, Vec3& vLastVisPoint);
@@ -245,6 +246,7 @@ public:
 
 	virtual IRenderNode* AddVegetationInstance(int nStaticGroupIndex, const Vec3& vPos, const float fScale, uint8 ucBright, uint8 angle, uint8 angleX, uint8 angleY);
 	virtual void         SetOceanWaterLevel(float oceanWaterLevel);
+	virtual void         IncreaseOceanWaterLevel(float increase, float increase2);
 
 	virtual void         MarkAndOffsetCloneRegion(const AABB& region, const Vec3& offset);
 	virtual void         CloneRegion(const AABB& region, const Vec3& offset, float zRotation, const uint16* pIncludeLayers, int numIncludeLayers);
@@ -286,6 +288,7 @@ public:
 	void          ResetTerrainVertBuffers(const AABB* pBox);
 	void          SetTerrainSectorTexture(int nTexSectorX, int nTexSectorY, unsigned int textureId, bool bMergeNotAllowed);
 	void          SetDetailLayerProperties(int nId, float fScaleX, float fScaleY, uint8 ucProjAxis, const char* szSurfName, const PodArray<int>& lstnVegetationGroups, IMaterial* pMat);
+	void          SetTerrainElevation2(int x1, int y1, int nSizeX, int nSizeY, float* pTerrainBlock);
 	void          SetTerrainElevation(int x1, int y1, int nSizeX, int nSizeY, float* pTerrainBlock, SSurfaceTypeItem* pSurfaceData, int nSurfOrgX, int nSurfOrgY, int nSurfSizeX, int nSurfSizeY, uint32* pResolMap, int nResolMapSizeX, int nResolMapSizeY);
 	void          HighlightTerrain(int x1, int y1, int x2, int y2);
 	bool          CanPaintSurfaceType(int x, int y, int r, uint16 usGlobalSurfaceType);

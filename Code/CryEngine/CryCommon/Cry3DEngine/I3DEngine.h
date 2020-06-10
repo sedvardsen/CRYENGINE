@@ -777,6 +777,7 @@ struct ITerrain
 
 	//! Set ocean level.
 	virtual void SetOceanWaterLevel(float oceanWaterLevel) = 0;
+	virtual void IncreaseOceanWaterLevel(float increase, float increase2) = 0;
 
 	//! Call this before any calls to CloneRegion to mark all the render nodes in the
 	//! source region(s) with the flag ERF_CLONE_SOURCE.  This ensures that the clone
@@ -808,6 +809,12 @@ struct ITerrain
 	//! pTerrainBlock points to a square 2D array with dimensions GetTerrainSize()
 	//! by default update only elevation.
 	virtual void SetTerrainElevation(int x1, int y1, int nSizeX, int nSizeY, float* pTerrainBlock, SSurfaceTypeItem* pSurfaceData, int nSurfOrgX, int nSurfOrgY, int nSurfSizeX, int nSurfSizeY, uint32* pResolMap, int nResolMapSizeX, int nResolMapSizeY) = 0;
+
+	//! Updates part of height map.
+	//! x1, y1, nSizeX, nSizeY are in terrain units
+	//! pTerrainBlock points to a square 2D array with dimensions GetTerrainSize()
+	//! by default update only elevation.
+	virtual void SetTerrainElevation2(int x1, int y1, int nSizeX, int nSizeY, float* pTerrainBlock) = 0;
 
 	//! Checks if it is possible to paint on the terrain with a given surface type ID.
 	//! \note Should be called by the editor to avoid overflowing the sector surface type palettes.

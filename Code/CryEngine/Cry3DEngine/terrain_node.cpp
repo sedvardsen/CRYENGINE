@@ -332,9 +332,7 @@ void CTerrainNode::Init(int x1, int y1, int nNodeSize, CTerrainNode* pParent, bo
 	m_bProcObjectsReady = 0;
 	m_bHasHoles = 0;
 
-#ifndef _RELEASE
 	m_eTextureEditingState = m_eElevTexEditingState = eTES_SectorIsUnmodified;
-#endif // _RELEASE
 
 	m_nOriginX = m_nOriginY = 0; // sector origin
 	m_nLastTimeUsed = 0;         // basically last time rendered

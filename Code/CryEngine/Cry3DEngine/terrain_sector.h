@@ -472,9 +472,7 @@ public:
 	uint8 m_bHasHoles         : 2;                 // sector has holes in the ground
 	uint8 m_bNoOcclusion      : 1;                 // sector has visareas under terrain surface
 
-#ifndef _RELEASE
 	ETextureEditingState m_eTextureEditingState, m_eElevTexEditingState;
-#endif // _RELEASE
 
 	uint8 // LOD's
 	       m_cNodeNewTexMML, m_cNodeNewTexMML_Min;
