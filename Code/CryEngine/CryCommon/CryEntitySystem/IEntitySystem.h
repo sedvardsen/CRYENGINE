@@ -23,6 +23,7 @@
 #include <CryCore/smartptr.h>
 #include <CryMath/Cry_Geo.h>
 #include <CrySystem/XML/IXml.h>
+#include <CryFlowGraph/IFlowSystem.h>
 
 // Forward declarations.
 class CEntity;
