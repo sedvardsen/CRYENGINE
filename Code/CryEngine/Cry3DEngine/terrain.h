@@ -340,6 +340,7 @@ public:
 	}
 	ILINE float GetWaterLevel()                      { return m_fOceanWaterLevel; /* ? m_fOceanWaterLevel : WATER_LEVEL_UNKNOWN;*/ }
 	ILINE void  SetWaterLevel(float oceanWaterLevel) { m_fOceanWaterLevel = oceanWaterLevel; }
+	
 
 	//////////////////////////////////////////////////////////////////////////
 	// ITerrain Implementation.
@@ -360,6 +361,7 @@ public:
 
 	virtual IRenderNode* AddVegetationInstance(int nStaticGroupIndex, const Vec3& vPos, const float fScale, uint8 ucBright, uint8 angle, uint8 angleX, uint8 angleY);
 	virtual void         SetOceanWaterLevel(float oceanWaterLevel);
+	virtual void         IncreaseOceanWaterLevel(float increase);
 
 	virtual void         MarkAndOffsetCloneRegion(const AABB& region, const Vec3& offset);
 	virtual void         CloneRegion(const AABB& region, const Vec3& offset, float zRotation, const uint16* pIncludeLayers, int numIncludeLayers);
@@ -402,6 +404,7 @@ public:
 	void SetDetailLayerProperties(int nId, float fScaleX, float fScaleY, uint8 ucProjAxis, const char* szSurfName, const PodArray<int>& lstnVegetationGroups, IMaterial* pMat);
 	bool IsOceanVisible() { return m_bOceanIsVisible != 0; }
 	void SetTerrainElevation(int x1, int y1, int nSizeX, int nSizeY, float* pTerrainBlock, SSurfaceTypeItem* pSurfaceData, int nSurfOrgX, int nSurfOrgY, int nSurfSizeX, int nSurfSizeY, uint32* pResolMap, int nResolMapSizeX, int nResolMapSizeY);
+	void SetTerrainElevation2(int x1, int y1, int nSizeX, int nSizeY, float* pTerrainBlock, SSurfaceTypeItem* pSurfaceData, int nSurfOrgX, int nSurfOrgY, int nSurfSizeX, int nSurfSizeY, uint32* pResolMap, int nResolMapSizeX, int nResolMapSizeY);
 	void HighlightTerrain(int x1, int y1, int x2, int y2);
 	bool CanPaintSurfaceType(int x, int y, int r, uint16 usGlobalSurfaceType);
 	void LoadSurfaceTypesFromXML(XmlNodeRef pDoc);

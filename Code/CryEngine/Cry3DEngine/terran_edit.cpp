@@ -158,6 +158,284 @@ void CTerrain::HighlightTerrain(int x1, int y1, int x2, int y2)
 	}
 }
 
+void CTerrain::SetTerrainElevation2(int X1, int Y1, int nSizeX, int nSizeY, float* pTerrainBlock,
+	SSurfaceTypeItem* pSurfaceData, int nSurfOrgX, int nSurfOrgY, int nSurfSizeX, int nSurfSizeY,
+	uint32* pResolMap, int nResolMapSizeX, int nResolMapSizeY)
+{
+	//LOADING_TIME_PROFILE_SECTION;
+	//FUNCTION_PROFILER_3DENGINE;
+
+	float fStartTime = GetCurAsyncTimeSec();
+	float unitSize = CTerrain::GetHeightMapUnitSize();
+	int nHmapSize = int(CTerrain::GetTerrainSize() / unitSize);
+
+	ResetHeightMapCache();
+
+	// everything is in units in this function
+
+	assert(nSizeX == nSizeY);
+	assert(X1 == ((X1 >> m_nUnitsToSectorBitShift) << m_nUnitsToSectorBitShift));
+	assert(Y1 == ((Y1 >> m_nUnitsToSectorBitShift) << m_nUnitsToSectorBitShift));
+	assert(nSizeX == ((nSizeX >> m_nUnitsToSectorBitShift) << m_nUnitsToSectorBitShift));
+	assert(nSizeY == ((nSizeY >> m_nUnitsToSectorBitShift) << m_nUnitsToSectorBitShift));
+
+	if (X1 < 0 || Y1 < 0 || X1 + nSizeX > nHmapSize || Y1 + nSizeY > nHmapSize)
+	{
+		Warning("CTerrain::SetTerrainHeightMapBlock: (X1,Y1) values out of range");
+		return;
+	}
+
+	AABB aabb = Get3DEngine()->m_pObjectsTree->GetNodeBox();
+
+	int x0 = (int)(aabb.min.x * m_fInvUnitSize);
+	int y0 = (int)(aabb.min.y * m_fInvUnitSize);
+
+	if (!GetParentNode())
+		BuildSectorsTree(false);
+
+	Array2d<struct CTerrainNode*>& sectorLayer = m_arrSecInfoPyramid[0];
+
+	int rangeX1 = max(0, X1 >> m_nUnitsToSectorBitShift);
+	int rangeY1 = max(0, Y1 >> m_nUnitsToSectorBitShift);
+	int rangeX2 = min(sectorLayer.GetSize(), (X1 + nSizeX) >> m_nUnitsToSectorBitShift);
+	int rangeY2 = min(sectorLayer.GetSize(), (Y1 + nSizeY) >> m_nUnitsToSectorBitShift);
+
+	std::vector<float> rawHeightmap;
+
+	AABB modifiedArea;
+	modifiedArea.Reset();
+
+	for (int rangeX = rangeX1; rangeX < rangeX2; rangeX++)
+	{
+		for (int rangeY = rangeY1; rangeY < rangeY2; rangeY++)
+		{
+			CTerrainNode* pTerrainNode = sectorLayer[rangeX][rangeY];
+
+			int x1 = x0 + (rangeX << m_nUnitsToSectorBitShift);
+			int y1 = y0 + (rangeY << m_nUnitsToSectorBitShift);
+			int x2 = x0 + ((rangeX + 1) << m_nUnitsToSectorBitShift);
+			int y2 = y0 + ((rangeY + 1) << m_nUnitsToSectorBitShift);
+
+			float fMaxTexelSizeMeters = -1;
+
+			if (pResolMap)
+			{
+				// get max allowed texture resolution here
+				int nResMapX = (nResolMapSizeX * (x1 / 2 + x2 / 2) / nHmapSize);
+				int nResMapY = (nResolMapSizeY * (y1 / 2 + y2 / 2) / nHmapSize);
+				nResMapX = CLAMP(nResMapX, 0, nResolMapSizeX - 1);
+				nResMapY = CLAMP(nResMapY, 0, nResolMapSizeY - 1);
+				int nTexRes = pResolMap[nResMapY + nResMapX * nResolMapSizeY];
+				int nResTileSizeMeters = GetTerrainSize() / nResolMapSizeX;
+				fMaxTexelSizeMeters = (float)nResTileSizeMeters / (float)nTexRes;
+			}
+
+			int nStep = 1 << 0 /*nGeomMML*/;
+			int nMaxStep = 1 << m_nUnitsToSectorBitShift;
+
+			SRangeInfo& ri = pTerrainNode->m_rangeInfo;
+
+			if (ri.nSize != nMaxStep / nStep + 1)
+			{
+				delete[] ri.pHMData;
+				ri.nSize = nMaxStep / nStep + 1;
+				ri.pHMData = new SHeightMapItem[ri.nSize * ri.nSize];
+				ri.UpdateBitShift(m_nUnitsToSectorBitShift);
+			}
+
+			assert(ri.pHMData);
+
+			if (rawHeightmap.size() < (size_t)ri.nSize * ri.nSize)
+			{
+				rawHeightmap.resize(ri.nSize * ri.nSize);
+			}
+
+			// find min/max
+			float fMin = pTerrainBlock[CLAMP(x1, 1, nHmapSize - 1) * nHmapSize + CLAMP(y1, 1, nHmapSize - 1)];
+			float fMax = fMin;
+
+			// fill height map data array in terrain node, all in units
+			for (int x = x1; x <= x2; x += nStep)
+			{
+				for (int y = y1; y <= y2; y += nStep)
+				{
+					int ix = min(nHmapSize - 1, x);
+					int iy = min(nHmapSize - 1, y);
+
+					float fHeight = pTerrainBlock[ix * nHmapSize + iy];
+
+					if (fHeight > fMax) fMax = fHeight;
+					if (fHeight < fMin) fMin = fHeight;
+
+					// TODO: add proper fp16/fp32 support
+
+					int x_local = (x - x1) / nStep;
+					int y_local = (y - y1) / nStep;
+
+					rawHeightmap[x_local * ri.nSize + y_local] = fHeight;
+				}
+			}
+
+			// reserve some space for in-game deformations
+			fMin = max(0.f, fMin - TERRAIN_DEFORMATION_MAX_DEPTH);
+
+			pTerrainNode->m_bHMDataIsModified = (ri.fOffset != fMin);
+
+			ri.fOffset = fMin;
+			ri.fRange = (fMax - fMin) / float(0x0FFF);
+
+			pTerrainNode->m_boxHeigtmapLocal.min.Set((float)((x1 - x0) * unitSize), (float)((y1 - y0) * unitSize), fMin);
+			pTerrainNode->m_boxHeigtmapLocal.max.Set((float)((x2 - x0) * unitSize), (float)((y2 - y0) * unitSize), max(fMax, GetWaterLevel()));
+
+			for (int x = x1; x <= x2; x += nStep)
+			{
+				for (int y = y1; y <= y2; y += nStep)
+				{
+					int xlocal = (x - x1) / nStep;
+					int ylocal = (y - y1) / nStep;
+					int nCellLocal = xlocal * ri.nSize + ylocal;
+
+					uint32 height = ri.fRange ? int((rawHeightmap[nCellLocal] - fMin) / ri.fRange) : 0;
+
+					assert(x >= x0 + X1 && y >= y0 + Y1 && x <= x0 + X1 + nSurfSizeX && y <= y0 + Y1 + nSurfSizeY && pSurfaceData);
+
+					int nSurfX = (x - nSurfOrgX);
+					int nSurfY = (y - nSurfOrgY);
+
+					SSurfaceTypeLocal dst;
+
+					assert(nSurfX >= 0 && nSurfY >= 0 && pSurfaceData);
+
+					nSurfX = min(nSurfX, nSurfSizeX - 1);
+					nSurfY = min(nSurfY, nSurfSizeY - 1);
+
+					{
+						int nSurfCell = nSurfX * nSurfSizeY + nSurfY;
+						assert(nSurfCell >= 0 && nSurfCell < nSurfSizeX * nSurfSizeY);
+
+						const SSurfaceTypeItem& src = pSurfaceData[nSurfCell];
+
+						if (src.GetHole())
+						{
+							dst = SRangeInfo::e_index_hole;
+						}
+						else
+						{
+							// read all 3 types, remap to local
+							for (int i = 0; i < SSurfaceTypeLocal::kMaxSurfaceTypesNum; i++)
+							{
+								dst.we[i] = src.we[i] / 16;
+
+								if (src.we[i] || !i)
+								{
+									dst.ty[i] = (byte)ri.GetLocalSurfaceTypeID(src.ty[i]);
+								}
+							}
+
+							dst.we[0] = SATURATEB(15 - dst.we[1] - dst.we[2]);
+						}
+					}
+
+					SHeightMapItem nNewValue;
+					nNewValue.height = height;
+
+					// pack SSurfTypeItem into uint32
+					uint32 surface = 0;
+					SSurfaceTypeLocal::EncodeIntoUint32(dst, surface);
+					nNewValue.surface = surface;
+
+					if (nNewValue != ri.pHMData[nCellLocal])
+					{
+						ri.pHMData[nCellLocal] = nNewValue;
+
+						pTerrainNode->m_bHMDataIsModified = true;
+					}
+				}
+			}
+		}
+	}
+
+	for (int rangeX = rangeX1; rangeX < rangeX2; rangeX++)
+	{
+		for (int rangeY = rangeY1; rangeY < rangeY2; rangeY++)
+		{
+			CTerrainNode* pTerrainNode = sectorLayer[rangeX][rangeY];
+
+			// re-init surface types info and update vert buffers in entire brunch
+			if (GetParentNode())
+			{
+				CTerrainNode* pNode = pTerrainNode;
+				while (pNode)
+				{
+					pNode->m_geomError = kGeomErrorNotSet;
+
+					pNode->ReleaseHeightMapGeometry();
+					pNode->RemoveProcObjects(false, false);
+					pNode->UpdateDetailLayersInfo(false);
+
+					// propagate bounding boxes and error metrics to parents
+					if (pNode != pTerrainNode)
+					{
+						pNode->m_boxHeigtmapLocal.min = SetMaxBB();
+						pNode->m_boxHeigtmapLocal.max = SetMinBB();
+
+						for (int nChild = 0; nChild < 4; nChild++)
+						{
+							pNode->m_boxHeigtmapLocal.min.CheckMin(pNode->m_pChilds[nChild].m_boxHeigtmapLocal.min);
+							pNode->m_boxHeigtmapLocal.max.CheckMax(pNode->m_pChilds[nChild].m_boxHeigtmapLocal.max);
+						}
+					}
+
+					// request elevation texture update
+					if (pNode->m_nNodeTexSet.nSlot0 != 0xffff && pNode->m_nNodeTexSet.nSlot0 < m_pTerrain->m_texCache[2].GetPoolSize())
+					{
+						if (pTerrainNode->m_bHMDataIsModified)
+							pNode->m_eElevTexEditingState = eTES_SectorIsModified_AtlasIsDirty;
+					}
+
+					pNode = pNode->m_pParent;
+				}
+			}
+
+			modifiedArea.Add(pTerrainNode->GetBBox());
+		}
+	}
+
+	if (Get3DEngine()->m_pObjectsTree)
+		Get3DEngine()->m_pObjectsTree->UpdateTerrainNodes();
+
+	// update roads
+	if (Get3DEngine()->m_pObjectsTree && (GetCVars()->e_TerrainDeformations || m_bEditor))
+	{
+		PodArray<IRenderNode*> lstRoads;
+
+		aabb = AABB(
+			Vec3((float)(x0 + X1) * (float)unitSize, (float)(y0 + Y1) * (float)unitSize, 0.f),
+			Vec3((float)(x0 + X1) * (float)unitSize + (float)nSizeX * (float)unitSize, (float)(y0 + Y1) * (float)unitSize + (float)nSizeY * (float)unitSize, 1024.f));
+
+		Get3DEngine()->m_pObjectsTree->GetObjectsByType(lstRoads, eERType_Road, &aabb);
+		for (int i = 0; i < lstRoads.Count(); i++)
+		{
+			CRoadRenderNode* pRoad = (CRoadRenderNode*)lstRoads[i];
+			pRoad->OnTerrainChanged();
+		}
+	}
+
+	if (GetParentNode())
+		GetParentNode()->UpdateRangeInfoShift();
+
+	if (!modifiedArea.IsReset())
+	{
+		modifiedArea.Expand(Vec3(2.f * GetHeightMapUnitSize()));
+		ResetTerrainVertBuffers(&modifiedArea);
+	}
+
+	m_bHeightMapModified = 0;
+
+	m_terrainPaintingFrameId = GetRenderer()->GetFrameID(false);
+}
+
+
 void CTerrain::SetTerrainElevation(int X1, int Y1, int nSizeX, int nSizeY, float* pTerrainBlock,
                                    SSurfaceTypeItem* pSurfaceData, int nSurfOrgX, int nSurfOrgY, int nSurfSizeX, int nSurfSizeY,
                                    uint32* pResolMap, int nResolMapSizeX, int nResolMapSizeY)
@@ -470,6 +748,20 @@ void CTerrain::ResetTerrainVertBuffers(const AABB* pBox)
 void CTerrain::SetOceanWaterLevel(float oceanWaterLevel)
 {
 	SetWaterLevel(oceanWaterLevel);
+	pe_params_buoyancy pb;
+	pb.waterPlane.origin.Set(0, 0, oceanWaterLevel);
+	if (gEnv->pPhysicalWorld)
+		gEnv->pPhysicalWorld->AddGlobalArea()->SetParams(&pb);
+	extern float g_oceanStep;
+	g_oceanStep = -1; // if e_PhysOceanCell is used, make it re-apply the params on Update
+}
+
+void CTerrain::IncreaseOceanWaterLevel(float increase)
+{
+	float oceanWaterLevel = GetWaterLevel() + increase;
+
+	SetWaterLevel(oceanWaterLevel);
+
 	pe_params_buoyancy pb;
 	pb.waterPlane.origin.Set(0, 0, oceanWaterLevel);
 	if (gEnv->pPhysicalWorld)
