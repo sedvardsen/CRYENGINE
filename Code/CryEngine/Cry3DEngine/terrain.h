@@ -361,7 +361,9 @@ public:
 
 	virtual IRenderNode* AddVegetationInstance(int nStaticGroupIndex, const Vec3& vPos, const float fScale, uint8 ucBright, uint8 angle, uint8 angleX, uint8 angleY);
 	virtual void         SetOceanWaterLevel(float oceanWaterLevel);
+	//FRANKEN
 	virtual void         IncreaseOceanWaterLevel(float increase);
+	//virtual void         SetNewHeightmap(float* heightmap);
 
 	virtual void         MarkAndOffsetCloneRegion(const AABB& region, const Vec3& offset);
 	virtual void         CloneRegion(const AABB& region, const Vec3& offset, float zRotation, const uint16* pIncludeLayers, int numIncludeLayers);

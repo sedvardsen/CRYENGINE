@@ -1087,9 +1087,9 @@ public:
 	virtual bool                     RenderMeshRayIntersection(IRenderMesh* pRenderMesh, SRayHitInfo& hitInfo, IMaterial* pCustomMtl = 0);
 	virtual void                     OnEntityDeleted(struct IEntity* pEntity);
 	virtual const char*              GetVoxelEditOperationName(EVoxelEditOperation eOperation);
-
-	virtual void                     SetEditorHeightmapCallback(IEditorHeightmap* pCallBack) { m_pEditorHeightmap = pCallBack; }
+	virtual void                     SetEditorHeightmapCallback(IEditorHeightmap* pCallBack) {  m_pEditorHeightmap = pCallBack; }
 	static IEditorHeightmap* m_pEditorHeightmap;
+	virtual void				     SetNewHeightmap(float* heightmap, float multiplier) { m_pEditorHeightmap->SetNewHeightmap(heightmap, multiplier); }
 
 	virtual IParticleManager* GetParticleManager() { return m_pPartManager; }
 	virtual IOpticsManager*   GetOpticsManager()   { return m_pOpticsManager; }

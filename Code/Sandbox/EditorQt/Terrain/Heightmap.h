@@ -58,6 +58,7 @@ public:
 	//! Returns information about sectors on terrain.
 	//! @param si Structure filled with queried data.
 	void    GetSectorsInfo(SSectorInfo& si);
+	t_hmap*            m_pHeightmap;
 
 	t_hmap* GetData() { return m_pHeightmap; };
 	bool    GetDataEx(t_hmap* pData, UINT iDestWidth, bool bSmooth = true, bool bNoise = true);
@@ -109,6 +110,7 @@ public:
 	//
 	bool         IsHoleAt(const int x, const int y) const;
 	virtual bool GetHoleAtPosition(const int x, const int y) const { return IsHoleAt(x, y); }
+	
 
 	// Arguments
 	//   bHole - true=hole, false=no hole
@@ -146,6 +148,7 @@ public:
 
 	float  GetElevationAtPosition(const float x, const float y) { return GetZInterpolated(x, y); }
 	float  GetRGBMultiplier();
+	void SetNewHeightmap(float* heightmap, float multiplier);
 
 	// Arguments
 	//   dwLayerId - from CLayer::GetLayerId()
@@ -311,7 +314,6 @@ private:
 	float              m_fWaterLevel;
 	float              m_fMaxHeight;
 
-	t_hmap*            m_pHeightmap;
 	CDynamicArray2D*   m_pNoise;
 
 	CSurfTypeImage     m_LayerIdBitmap; // (m_iWidth,m_iHeight) LayerId and EHeighmapInfo (was m_info, Detail LayerId per heightmap element)

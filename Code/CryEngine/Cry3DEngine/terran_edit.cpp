@@ -158,6 +158,7 @@ void CTerrain::HighlightTerrain(int x1, int y1, int x2, int y2)
 	}
 }
 
+
 void CTerrain::SetTerrainElevation2(int X1, int Y1, int nSizeX, int nSizeY, float* pTerrainBlock,
 	SSurfaceTypeItem* pSurfaceData, int nSurfOrgX, int nSurfOrgY, int nSurfSizeX, int nSurfSizeY,
 	uint32* pResolMap, int nResolMapSizeX, int nResolMapSizeY)
@@ -355,6 +356,8 @@ void CTerrain::SetTerrainElevation2(int X1, int Y1, int nSizeX, int nSizeY, floa
 		}
 	}
 
+
+
 	for (int rangeX = rangeX1; rangeX < rangeX2; rangeX++)
 	{
 		for (int rangeY = rangeY1; rangeY < rangeY2; rangeY++)
@@ -435,7 +438,21 @@ void CTerrain::SetTerrainElevation2(int X1, int Y1, int nSizeX, int nSizeY, floa
 	m_terrainPaintingFrameId = GetRenderer()->GetFrameID(false);
 }
 
-
+//void CTerrain::SetNewHeightmap(float* heightmap) 
+//{ 
+//	getheightma
+//	m_pEditorHeightmap->SetNewHeightmap(heightmap); 
+//}
+//// Franken modofy
+//virtual void SetNewHeightmap(float* heightmap) {
+//	int size = 1024 * 1024;
+//	for (int i = 0; i < size; i++)
+//	{
+//		m_pHeightmap[i] = heightmap[i];
+//	}
+//	UpdateEngineTerrain();
+//
+//}
 void CTerrain::SetTerrainElevation(int X1, int Y1, int nSizeX, int nSizeY, float* pTerrainBlock,
                                    SSurfaceTypeItem* pSurfaceData, int nSurfOrgX, int nSurfOrgY, int nSurfSizeX, int nSurfSizeY,
                                    uint32* pResolMap, int nResolMapSizeX, int nResolMapSizeY)

@@ -2638,8 +2638,11 @@ void CHeightmap::UpdateEngineTerrain(int x1, int y1, int areaSize, int _height, 
 		uint32 nSizeY = m_TerrainRGBTexture.GetTileCountY();
 		uint32* pResolutions = new uint32[nSizeX * nSizeY];
 		for (int x = 0; x < nSizeX; x++)
-			for (int y = 0; y < nSizeY; y++)
-				pResolutions[x + y * nSizeX] = m_TerrainRGBTexture.GetTileResolution(x, y);
+			for (int y = 0; y < nSizeY; y++) 
+			{
+				uint32 res = m_TerrainRGBTexture.GetTileResolution(x, y);
+				pResolutions[x + y * nSizeX] = res;
+			}
 
 		p3DEngine->SetHeightMapMaxHeight(m_fMaxHeight);
 		p3DEngine->GetITerrain()->SetTerrainElevation(y1, x1, w, h, m_pHeightmap, terrainBlock,
@@ -3034,6 +3037,22 @@ float CHeightmap::GetRGBMultiplier()
 {
 	return m_kfBrMultiplier;
 }
+
+//FRANKEN
+void CHeightmap::SetNewHeightmap(float* heightmap, float multiplier) {
+	int size = 1024 * 1024;
+
+	float fPrecisionScale = GetShortPrecisionScale();
+
+	for (int i = 0; i < size; i++)
+	{
+		m_pHeightmap[i] = (heightmap[i] * multiplier) / fPrecisionScale;
+	}
+	UpdateEngineTerrain(false, true);
+
+}
+//TODO INSERT HERE
+
 
 //////////////////////////////////////////////////////////////////////////
 float CHeightmap::GetZInterpolated(const float x, const float y)

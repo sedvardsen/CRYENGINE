@@ -654,6 +654,9 @@ struct IEditorHeightmap
 	virtual ColorB GetColorAtPosition(const float x, const float y, ColorB* colors = nullptr, const int colorsNum = 0, const float xStep = 0) = 0;
 	virtual float  GetElevationAtPosition(const float x, const float y) = 0;
 	virtual float  GetRGBMultiplier() = 0;
+	
+	//Franken-addition
+	virtual void SetNewHeightmap(float* heightmap, float multiplier) = 0;
 	// </interfuscator:shuffle>
 };
 
@@ -776,6 +779,7 @@ struct ITerrain
 	//! Set ocean level.
 	virtual void SetOceanWaterLevel(float oceanWaterLevel) = 0;
 	virtual void IncreaseOceanWaterLevel(float increase) = 0;
+	//virtual void SetNewHeightmap(float* heightmap) = 0;
 
 	//! Call this before any calls to CloneRegion to mark all the render nodes in the
 	//! source region(s) with the flag ERF_CLONE_SOURCE.  This ensures that the clone
@@ -2138,6 +2142,7 @@ struct I3DEngine : public IProcess
 
 	//! Gives 3dengine access to original and most precise heighmap data in the editor
 	virtual void                     SetEditorHeightmapCallback(IEditorHeightmap* pCallBack) = 0;
+	virtual void				     SetNewHeightmap(float* heightmap, float multiplier) = 0;
 
 	virtual PodArray<SRenderLight*>* GetDynamicLightSources() = 0;
 
